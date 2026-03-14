@@ -11,10 +11,13 @@ bot = telebot.TeleBot(TOKEN)
 
 # Базы данных в памяти
 user_stats = {}      # {(chat_id, user_id): {'size': 0, 'last_time': datetime.min, 'name': 'Имя'}}
-admin_modifiers = {} # {'username': 5}
 known_groups = {}    # {chat_id: "Название"}
 
-# Создаем меню команд (появится слева от поля ввода текста в телеграме)
+# База для перехватов: {ID_перехвата: {'chat_id': id, 'username': 'имя', 'modifier': 5}}
+admin_modifiers = {} 
+override_counter = 0 # Уникальный счетчик для отмены перехватов
+
+# Создаем меню команд
 bot.set_my_commands([
     types.BotCommand("zopka", "Изменить глубину (раз в 24 часа)"),
     types.BotCommand("top", "Рейтинг дырявых этого чата")
@@ -26,7 +29,6 @@ bot.set_my_commands([
 @bot.message_handler(content_types=['new_chat_members'])
 def welcome_bot(message):
     for member in message.new_chat_members:
-        # Если добавленный участник — это сам бот
         if member.id == bot.get_me().id:
             bot.send_message(
                 message.chat.id,
@@ -59,34 +61,16 @@ def zopka_game(message):
     key = (chat_id, user_id)
     now = datetime.now()
 
-    # Сохраняем не только размер, но и имя для рейтинга
     if key not in user_stats:
         user_stats[key] = {'size': 0, 'last_time': datetime.min, 'name': user_name}
     else:
-        # Обновляем имя, если юзер его поменял
         user_stats[key]['name'] = user_name
 
     stats = user_stats[key]
     time_passed = now - stats['last_time']
     current_size = stats['size']
 
-    # 1. Проверка на админское вмешательство
-    if username in admin_modifiers:
-        modifier = admin_modifiers.pop(username)
-        new_size = current_size + modifier
-        new_size = max(0, new_size) # В минус уходить нельзя
-        
-        actual_change = abs(new_size - current_size)
-        stats['size'] = new_size
-        stats['last_time'] = now
-        
-        if modifier > 0:
-            bot.reply_to(message, f"✨ Внезапное мистическое вмешательство! ✨\nИнструмент вошел глубже на {actual_change} см.\nТекущая глубина: {new_size} см.")
-        else:
-            bot.reply_to(message, f"✨ Внезапное мистическое вмешательство! ✨\nРаны резко зажили на {actual_change} см.\nТекущая глубина: {new_size} см.")
-        return
-
-    # 2. Стандартная игра раз в 24 часа
+    # 1. Проверяем таймер 24 часа до любых действий!
     if time_passed < timedelta(days=1):
         remaining = timedelta(days=1) - time_passed
         hours, remainder = divmod(remaining.seconds, 3600)
@@ -94,21 +78,36 @@ def zopka_game(message):
         bot.reply_to(message, f"Раны еще в процессе! 🩹\nПриходи через {hours} ч. {minutes} мин.")
         return
 
-    # Логика: если 0 см — только рост, иначе рандом (рост или заживление)
-    if current_size == 0:
-        direction = 1
-    else:
-        direction = random.choice([1, -1])
+    # 2. Ищем активный перехват для этого чата и пользователя
+    applied_modifier = None
+    for oid, data in list(admin_modifiers.items()):
+        if data['chat_id'] == chat_id and data['username'] == username:
+            applied_modifier = data['modifier']
+            del admin_modifiers[oid] # Удаляем перехват, он сработал
+            break
 
-    # Изменение до 20 см за один раз
-    change = random.randint(1, 20)
+    # 3. Применяем логику (либо перехват, либо случайность)
+    if applied_modifier is not None:
+        direction = 1 if applied_modifier > 0 else -1
+        change = abs(applied_modifier)
+    else:
+        if current_size == 0:
+            direction = 1
+        else:
+            direction = random.choice([1, -1])
+        change = random.randint(1, 20)
+
+    # Высчитываем новый размер
     new_size = current_size + (change * direction)
-    new_size = max(0, new_size) # Защита от ухода в минус
+    new_size = max(0, new_size) # В минус уходить нельзя
     
     actual_change = abs(new_size - current_size)
+    
+    # Обновляем статистику (запускаем кулдаун 24 часа)
     stats['size'] = new_size
     stats['last_time'] = now
 
+    # 4. Выводим СТАНДАРТНЫЙ текст (никто не догадается про перехват)
     if direction == 1:
         text = f"Ого, инструмент вошел поглубже! Увеличилось на {actual_change} см.\nТекущая глубина: {new_size} см. 🍑"
     elif new_size == 0 and current_size > 0:
@@ -129,7 +128,6 @@ def group_rating(message):
 
     chat_id = message.chat.id
     
-    # Собираем всех игроков текущего чата
     chat_players = []
     for (cid, uid), data in user_stats.items():
         if cid == chat_id:
@@ -139,7 +137,6 @@ def group_rating(message):
         bot.reply_to(message, "В этом чате пока никто не играл! Жмите /zopka")
         return
 
-    # Сортируем по убыванию размера
     chat_players.sort(key=lambda x: x[1], reverse=True)
 
     text = "🏆 **Рейтинг глубин этого чата:**\n\n"
@@ -151,52 +148,97 @@ def group_rating(message):
 # ==========================================
 # АДМИН ПАНЕЛЬ (Только для ЛС с ботом)
 # ==========================================
+def get_admin_markup():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton("🔧 Изменить см"), types.KeyboardButton("🛑 Активные перехваты"))
+    markup.add(types.KeyboardButton("✅ Проверка статуса"), types.KeyboardButton("📋 Список групп"))
+    return markup
+
 @bot.message_handler(commands=['start', 'admin'], func=lambda m: m.chat.type == 'private' and m.from_user.id == ADMIN_ID)
 def admin_panel(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("🔧 Изменить см"), types.KeyboardButton("✅ Проверка статуса"), types.KeyboardButton("📋 Список групп"))
-    bot.send_message(message.chat.id, "Добро пожаловать в панель управления! Выбери действие:", reply_markup=markup)
+    bot.send_message(message.chat.id, "Добро пожаловать в панель управления! Выбери действие:", reply_markup=get_admin_markup())
 
 @bot.message_handler(content_types=['text'], func=lambda m: m.chat.type == 'private' and m.from_user.id == ADMIN_ID)
 def handle_admin_buttons(message):
     if message.text == "✅ Проверка статуса":
         bot.reply_to(message, "Бот работает стабильно! Все системы в норме. 🚀")
+        
     elif message.text == "📋 Список групп":
         if not known_groups:
             bot.reply_to(message, "Бот пока не видел активности ни в одной группе.")
         else:
             text = "Бот работает в группах:\n" + "".join([f"- {title}\n" for cid, title in known_groups.items()])
             bot.reply_to(message, text)
+            
+    elif message.text == "🛑 Активные перехваты":
+        if not admin_modifiers:
+            bot.reply_to(message, "Активных перехватов сейчас нет.")
+            return
+            
+        for oid, data in list(admin_modifiers.items()):
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("❌ Отменить", callback_data=f"del_ovr_{oid}"))
+            
+            grp_name = known_groups.get(data['chat_id'], "Неизвестная группа")
+            text = f"Группа: {grp_name}\nЮзер: @{data['username']}\nИзменение: {data['modifier']} см"
+            bot.send_message(message.chat.id, text, reply_markup=markup)
+            
     elif message.text == "🔧 Изменить см":
-        msg = bot.reply_to(message, "Введите юзернейм (например, durov):", reply_markup=types.ReplyKeyboardRemove())
-        bot.register_next_step_handler(msg, process_username_step)
+        if not known_groups:
+            bot.reply_to(message, "Бот пока не состоит ни в одной группе! Добавьте его в чат и напишите там /zopka.")
+            return
+            
+        markup = types.InlineKeyboardMarkup()
+        for cid, title in known_groups.items():
+            markup.add(types.InlineKeyboardButton(title, callback_data=f"sel_grp_{cid}"))
+            
+        bot.send_message(message.chat.id, "Выберите группу для перехвата:", reply_markup=markup)
 
-def process_username_step(message):
+# --- Обработка инлайн-кнопок админа ---
+@bot.callback_query_handler(func=lambda call: call.data.startswith('del_ovr_'))
+def cancel_override(call):
+    oid = int(call.data.replace('del_ovr_', ''))
+    if oid in admin_modifiers:
+        del admin_modifiers[oid]
+        bot.edit_message_text("✅ Перехват отменен.", call.message.chat.id, call.message.message_id)
+    else:
+        bot.answer_callback_query(call.id, "Уже сработал или отменен.")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('sel_grp_'))
+def select_group(call):
+    chat_id = int(call.data.replace('sel_grp_', ''))
+    bot.answer_callback_query(call.id) # Закрываем ожидание загрузки кнопки
+    
+    msg = bot.send_message(call.message.chat.id, f"Выбрана группа: {known_groups[chat_id]}\n\nВведите юзернейм (например, durov):")
+    bot.register_next_step_handler(msg, process_username_step, chat_id)
+
+def process_username_step(message, chat_id):
     username = message.text.replace('@', '').lower()
     msg = bot.reply_to(message, f"@{username}\nСколько см добавить или отнять? (Например: 15 или -5):")
-    bot.register_next_step_handler(msg, process_modifier_step, username)
+    bot.register_next_step_handler(msg, process_modifier_step, chat_id, username)
 
-def process_modifier_step(message, username):
+def process_modifier_step(message, chat_id, username):
+    global override_counter
     try:
         modifier = int(message.text)
-        admin_modifiers[username] = modifier
-        
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(types.KeyboardButton("🔧 Изменить см"), types.KeyboardButton("✅ Проверка статуса"), types.KeyboardButton("📋 Список групп"))
+        if modifier == 0:
+            bot.reply_to(message, "Изменение не может быть равно 0! Начните заново из меню.")
+            return
+            
+        override_counter += 1
+        admin_modifiers[override_counter] = {'chat_id': chat_id, 'username': username, 'modifier': modifier}
         
         action = "вырастет на" if modifier > 0 else "уменьшится на"
-        bot.reply_to(message, f"✅ Сохранено! При следующем нажатии /zopka глубина @{username} {action} {abs(modifier)} см.", reply_markup=markup)
+        bot.reply_to(message, f"✅ Сохранено в активные перехваты!\nКогда @{username} нажмет /zopka в выбранной группе (и если у него прошел кулдаун), его глубина {action} {abs(modifier)} см.", reply_markup=get_admin_markup())
     except ValueError:
-        bot.reply_to(message, "Ошибка! Нужно было ввести число. Нажми /start для перезапуска.")
+        bot.reply_to(message, "Ошибка! Нужно было ввести число. Начните заново из меню.")
 
 # ==========================================
 # ОТВЕТ ОБЫЧНЫМ ПОЛЬЗОВАТЕЛЯМ В ЛС
 # ==========================================
 @bot.message_handler(func=lambda m: m.chat.type == 'private' and m.from_user.id != ADMIN_ID)
 def non_admin_private(message):
-    # Создаем кнопку с глубокой ссылкой для добавления в группу
     markup = types.InlineKeyboardMarkup()
-    # bot.get_me().username автоматически подставит юзернейм твоего бота
     add_url = f"https://t.me/{bot.get_me().username}?startgroup=true"
     btn = types.InlineKeyboardButton(text="➕ Добавить в группу", url=add_url)
     markup.add(btn)
