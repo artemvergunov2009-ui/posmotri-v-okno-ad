@@ -189,5 +189,24 @@ def process_modifier_step(message, username):
     except ValueError:
         bot.reply_to(message, "Ошибка! Нужно было ввести число. Нажми /start для перезапуска.")
 
+# ==========================================
+# ОТВЕТ ОБЫЧНЫМ ПОЛЬЗОВАТЕЛЯМ В ЛС
+# ==========================================
+@bot.message_handler(func=lambda m: m.chat.type == 'private' and m.from_user.id != ADMIN_ID)
+def non_admin_private(message):
+    # Создаем кнопку с глубокой ссылкой для добавления в группу
+    markup = types.InlineKeyboardMarkup()
+    # bot.get_me().username автоматически подставит юзернейм твоего бота
+    add_url = f"https://t.me/{bot.get_me().username}?startgroup=true"
+    btn = types.InlineKeyboardButton(text="➕ Добавить в группу", url=add_url)
+    markup.add(btn)
+
+    bot.send_message(
+        message.chat.id,
+        "Привет! 🍑\nЯ командный игрок и работаю только в общих чатах.\n\n"
+        "Жми кнопку ниже, чтобы добавить меня в свою группу. Не забудь выдать мне права администратора после добавления!",
+        reply_markup=markup
+    )
+
 print("Бот запущен!")
 bot.infinity_polling()
