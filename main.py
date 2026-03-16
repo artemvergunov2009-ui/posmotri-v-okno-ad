@@ -195,15 +195,14 @@ async def cmd_dig(message: types.Message):
             text_action = "заживил"
             emoji = "🩹"
     else:
-        # Обычные игроки: более сбалансированный и рискованный шанс
-        # Шанс 55% на рост, 45% на сужение
-        if random.random() > 0.45:
-            change = random.randint(1, 18)
+        # Обычные игроки: шанс 75% на рост, 25% на сужение
+        if random.random() > 0.25:
+            change = random.randint(2, 16)
             text_action = "разработал"
             emoji = "⛏️"
         else:
-            # Уменьшение стало более вероятным и может быть более значительным
-            change = random.randint(-15, -1)
+            # Штраф стал менее разрушительным
+            change = random.randint(-8, -1)
             text_action = "заживил"
             emoji = "🩹"
 
