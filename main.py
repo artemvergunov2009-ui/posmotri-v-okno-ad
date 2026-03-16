@@ -187,7 +187,7 @@ async def cmd_dig(message: types.Message):
     if is_cheater:
         # Читеру везет гораздо чаще (85% шанс на успех), и текст не отличается от обычного
         if random.random() > 0.15:
-            change = random.randint(5, 15)
+            change = random.randint(7, 13)
             text_action = "разработал"
             emoji = "⛏️"
         else:
