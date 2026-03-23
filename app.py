@@ -2,18 +2,20 @@ import os
 import uuid
 import traceback
 import urllib.parse
+import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from supabase import create_client, Client
 from werkzeug.security import generate_password_hash, check_password_hash
+from pywebpush import webpush, WebPushException
 
 app = Flask(__name__)
 # Секретный ключ тоже берем из среды, а если его нет — используем запасной
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'samberrrgram-super-secret-key') 
 socketio = SocketIO(app, cors_allowed_origins="*")
+
 # --- Настройки Supabase (БЕЗОПАСНЫЕ) -
-# Теперь ключи не написаны текстом, сервер будет брать их из своих скрытых настроек
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -22,6 +24,15 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 # Создаем клиента только если ключи есть (чтобы локально не падало с ошибкой до настройки)
 if SUPABASE_URL and SUPABASE_KEY:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# === НАСТРОЙКИ WEB PUSH (БЕЗОПАСНЫЕ) ===
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
+# Почта нужна спецификации VAPID для связи (можно оставить любую свою)
+VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:admin@samberrrgram.com")
+
+if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+    print("ВНИМАНИЕ: Ключи VAPID для Push-уведомлений не найдены в Environment Variables.")
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -90,6 +101,19 @@ def logout():
 def chat():
     if 'username' not in session: return redirect(url_for('login'))
     return render_template('chat.html', username=session['username'])
+
+@app.route('/subscribe', methods=['POST'])
+def subscribe():
+    if 'username' not in session: 
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    sub_info = request.json
+    try:
+        # Сохраняем подписку юзера в базу данных
+        supabase.table('users').update({'push_subscription': sub_info}).eq('username', session['username']).execute()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
