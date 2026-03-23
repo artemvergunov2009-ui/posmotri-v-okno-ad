@@ -656,6 +656,17 @@
         let currentRoomId = ''; let currentRoomType = ''; let currentChatTarget = ''; let myRole = 'member';
         const currentUser = "{{ username }}";
 
+        // Регистрация Service Worker для фоновых пушей
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    navigator.serviceWorker.register('/sw.js')
+    .then(function(swReg) {
+        console.log('Service Worker успешно зарегистрирован!', swReg);
+    })
+    .catch(function(error) {
+        console.error('Ошибка регистрации Service Worker:', error);
+    });
+}
+
         let messagesStore = {}; let pinnedMsgs = new Map(); let myChatsList = [];
         let isSelectMode = false; let selectedMsgs = new Set();
         let editingId = null; let replyingToId = null; let forwardingMsgId = null;
