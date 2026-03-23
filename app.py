@@ -659,7 +659,42 @@ def get_story_views(data):
 
 # --- ЗВОНКИ (АБСОЛЮТНО ТВОЙ КОД) ---
 @socketio.on('call_user')
-def call_user(data): emit('incoming_call', {'from': session.get('username')}, to=f"user_{data.get('target')}")
+def call_user(data):
+    caller = session.get('username')
+    target = data.get('target')
+    
+    # 1. Отправляем обычный сокет-сигнал (если вкладка открыта)
+    emit('incoming_call', {'from': caller}, to=f"user_{target}")
+    
+    # 2. Пытаемся разбудить телефон через Web Push (если вкладка закрыта)
+    try:
+        # Достаем подписку собеседника из базы
+        user_db = supabase.table('users').select('push_subscription').eq('username', target).execute()
+        
+        if user_db.data and user_db.data[0].get('push_subscription'):
+            subscription_info = user_db.data[0]['push_subscription']
+            
+            # Формируем полезную нагрузку (то, что увидит Service Worker)
+            payload = json.dumps({
+                "title": "📞 Входящий звонок",
+                "body": f"{caller} звонит вам в Samberrrgram",
+                "url": "/chat",
+                "icon": "/static/logo.png" # Убедись, что логотип лежит в папке static
+            })
+            
+            # Отправляем push-уведомление через серверы Apple/Google
+            webpush(
+                subscription_info=subscription_info,
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_CLAIMS_EMAIL}
+            )
+            print(f"Пуш-уведомление успешно отправлено пользователю {target}")
+            
+    except WebPushException as ex:
+        print("Ошибка Web Push (возможно, подписка устарела):", repr(ex))
+    except Exception as e:
+        print("Системная ошибка при отправке пуша:", str(e))
 
 @socketio.on('answer_call')
 def answer_call(data): emit('call_accepted', {'by': session.get('username')}, to=f"user_{data.get('caller')}")
