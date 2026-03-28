@@ -6,142 +6,149 @@
     <title>MediaStudio</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Весь твой предыдущий CSS + новые стили уведомлений */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Nunito', sans-serif;
             background: linear-gradient(135deg, #240046 0%, #3c096c 50%, #7b2cbf 100%);
-            color: #fff; min-height: 100vh; overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
+            color: #fff; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
 
-        /* УВЕДОМЛЕНИЯ ВНУТРИ САЙТА */
-        #status-msg {
-            position: fixed; top: 20px; right: 20px; padding: 15px 25px;
-            border-radius: 15px; z-index: 100; display: none;
-            backdrop-filter: blur(10px); font-weight: 600;
-            animation: slideIn 0.5s ease;
+        /* КРАСИВОЕ УВЕДОМЛЕНИЕ ВНУТРИ САЙТА */
+        #toast {
+            position: fixed; top: 20px; transform: translateY(-150%);
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
+            padding: 15px 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000;
         }
-        .msg-error { background: rgba(255, 75, 75, 0.2); border: 1px solid #ff4b4b; color: #ff4b4b; }
-        .msg-success { background: rgba(75, 255, 75, 0.2); border: 1px solid #4bff4b; color: #4bff4b; }
-
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        #toast.show { transform: translateY(0); }
 
         .content-card {
             background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-            padding: 30px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.2);
-            width: 90%; max-width: 420px; z-index: 2; text-align: center;
+            padding: 35px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2);
+            width: 90%; max-width: 400px; z-index: 10; text-align: center;
         }
-        
-        /* Поля ввода */
-        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        .input-group { margin-bottom: 15px; }
         input {
-            width: 100%; padding: 12px; border: none; border-radius: 12px;
-            background: rgba(255, 255, 255, 0.15); color: #fff; outline: none;
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1); color: #fff; outline: none; transition: 0.3s;
         }
-        .hidden { display: none; }
-        
-        /* Кнопка и лепестки (оставляем старые) */
-        .rainbow-btn { position: relative; padding: 3px; border-radius: 20px; background: transparent; border: none; cursor: pointer; overflow: hidden; width: 100%; margin-top: 10px; }
-        .rainbow-btn span { display: block; padding: 12px; background: #7b2cbf; border-radius: 17px; font-weight: 800; color: #fff; position: relative; z-index: 2; }
-        .rainbow-btn:hover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000); z-index: 1; animation: spin 2s linear infinite; }
+        input:focus { background: rgba(255, 255, 255, 0.2); }
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        .rainbow-btn {
+            position: relative; padding: 3px; border-radius: 20px; background: transparent;
+            border: none; cursor: pointer; overflow: hidden; width: 100%;
+        }
+        .rainbow-btn span {
+            display: block; padding: 14px; background: #5a189a; border-radius: 17px;
+            font-weight: 800; color: #fff; position: relative; z-index: 2;
+        }
+        .rainbow-btn:hover::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
+            z-index: 1; animation: spin 2s linear infinite;
+        }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .toggle-btn { margin-top: 20px; font-size: 13px; color: #c77dff; cursor: pointer; text-decoration: underline; }
+        .hidden { display: none; }
         #flowers-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
         .flower { position: absolute; background: #e0aaff; border-radius: 10px 0; opacity: 0.5; animation: fall linear forwards; }
-        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="status-msg"></div>
+    <div id="toast">Сообщение</div>
     <div id="flowers-container"></div>
 
     <div class="content-card">
-        <h1 id="form-title" style="margin-bottom: 20px; color: #e0aaff;">Вход</h1>
-        
+        <h1 id="title" style="margin-bottom: 25px; color: #e0aaff;">С возвращением</h1>
+
         <form id="loginForm">
-            <input type="text" id="loginInput" placeholder="Почта или Никнейм" style="margin-bottom: 15px;" required>
-            <input type="password" id="loginPass" placeholder="Пароль" style="margin-bottom: 15px;" required>
+            <div class="input-group"><input type="text" id="lInput" placeholder="Email или Никнейм" required></div>
+            <div class="input-group"><input type="password" id="lPass" placeholder="Пароль" required></div>
             <button type="submit" class="rainbow-btn"><span>Войти</span></button>
-            <p style="margin-top: 15px; font-size: 13px; cursor: pointer;" onclick="toggle()">Еще нет аккаунта?</p>
+            <p class="toggle-btn" onclick="toggle()">Создать аккаунт</p>
         </form>
 
         <form id="registerForm" class="hidden">
             <div class="input-row">
-                <input type="text" id="regFirst" placeholder="Имя" required>
-                <input type="text" id="regLast" placeholder="Фамилия" required>
+                <input type="text" id="rFirst" placeholder="Имя" required>
+                <input type="text" id="rLast" placeholder="Фамилия" required>
             </div>
-            <input type="text" id="regUser" placeholder="Никнейм" style="margin-bottom: 15px;" required>
-            <input type="email" id="regEmail" placeholder="Email" style="margin-bottom: 15px;" required>
-            <input type="password" id="regPass" placeholder="Пароль" style="margin-bottom: 15px;" required>
-            <button type="submit" class="rainbow-btn"><span>Создать профиль</span></button>
-            <p style="margin-top: 15px; font-size: 13px; cursor: pointer;" onclick="toggle()">Уже есть аккаунт?</p>
+            <div class="input-group"><input type="text" id="rUser" placeholder="Никнейм" required></div>
+            <div class="input-group"><input type="email" id="rEmail" placeholder="Email" required></div>
+            <div class="input-group"><input type="password" id="rPass" placeholder="Пароль" required></div>
+            <button type="submit" class="rainbow-btn"><span>Зарегистрироваться</span></button>
+            <p class="toggle-btn" onclick="toggle()">Уже есть аккаунт</p>
         </form>
     </div>
 
     <script>
         const API = 'https://mediastudio-creative-mdpz.onrender.com/api';
 
-        function showMsg(text, isError = false) {
-            const el = document.getElementById('status-msg');
-            el.innerText = text;
-            el.className = isError ? 'msg-error' : 'msg-success';
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        function notify(text, color = "#e0aaff") {
+            const t = document.getElementById('toast');
+            t.innerText = text;
+            t.style.color = color;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
 
         function toggle() {
             document.getElementById('loginForm').classList.toggle('hidden');
             document.getElementById('registerForm').classList.toggle('hidden');
-            document.getElementById('form-title').innerText = 
-                document.getElementById('registerForm').classList.contains('hidden') ? 'Вход' : 'Регистрация';
+            document.getElementById('title').innerText = 
+                document.getElementById('loginForm').classList.contains('hidden') ? 'Регистрация' : 'С возвращением';
         }
 
         // РЕГИСТРАЦИЯ
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault();
-            const response = await fetch(`${API}/register`, {
+            const res = await fetch(`${API}/register`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    first_name: document.getElementById('regFirst').value,
-                    last_name: document.getElementById('regLast').value,
-                    username: document.getElementById('regUser').value,
-                    email: document.getElementById('regEmail').value,
-                    password: document.getElementById('regPass').value
+                    first_name: document.getElementById('rFirst').value,
+                    last_name: document.getElementById('rLast').value,
+                    username: document.getElementById('rUser').value,
+                    email: document.getElementById('rEmail').value,
+                    password: document.getElementById('rPass').value
                 })
             });
-            const res = await response.json();
-            if(res.success) { showMsg("Регистрация успешна! Теперь войдите."); toggle(); }
-            else { showMsg(res.error, true); }
+            const data = await res.json();
+            if(data.success) { notify("Успех! Войдите в аккаунт", "#4bff4b"); toggle(); }
+            else { notify("Ошибка: " + data.error, "#ff4b4b"); }
         };
 
         // ВХОД
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
-            const response = await fetch(`${API}/login`, {
+            const res = await fetch(`${API}/login`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    login_input: document.getElementById('loginInput').value,
-                    password: document.getElementById('loginPass').value
+                    login_input: document.getElementById('lInput').value,
+                    password: document.getElementById('lPass').value
                 })
             });
-            const res = await response.json();
-            if(res.success) { showMsg(`Привет, ${res.user.username}!`); }
-            else { showMsg("Неверный логин или пароль", true); }
+            const data = await res.json();
+            if(data.success) { notify(`Привет, ${data.user.username}!`, "#4bff4b"); }
+            else { notify("Неверный логин или пароль", "#ff4b4b"); }
         };
 
         // ЛЕПЕСТКИ
         setInterval(() => {
-            const container = document.getElementById('flowers-container');
+            const c = document.getElementById('flowers-container');
             const f = document.createElement('div');
             f.className = 'flower';
             f.style.left = Math.random() * 100 + 'vw';
-            f.style.width = f.style.height = (Math.random() * 10 + 10) + 'px';
+            f.style.width = f.style.height = (Math.random() * 8 + 8) + 'px';
             f.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            container.appendChild(f);
-            setTimeout(() => f.remove(), 5000);
-        }, 150);
+            c.appendChild(f);
+            setTimeout(() => f.remove(), 4000);
+        }, 100);
     </script>
 </body>
 </html>
