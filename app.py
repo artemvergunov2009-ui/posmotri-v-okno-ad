@@ -20,7 +20,7 @@ else:
 
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({"status": "API работает отлично! Ждем запросов."}), 200
+    return "Сервер MediaStudio запущен и готов к работе! 🚀", 200
 
 # --- 1. РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ---
 @app.route('/api/register', methods=['POST'])
