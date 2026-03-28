@@ -3,166 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Весенний Проект</title>
+    <title>MediaStudio — Весна</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
-    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, #c8b6ff 0%, #e0c3fc 50%, #bbd0ff 100%);
-            color: #3b2853;
+            background: linear-gradient(135deg, #240046 0%, #3c096c 50%, #7b2cbf 100%);
+            color: #fff;
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
 
-        #flowers-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 1;
-        }
-
+        #flowers-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
         .flower {
-            position: absolute; top: -20px; width: 15px; height: 15px;
-            background: #dca3ff; border-radius: 15px 0 15px 0;
-            opacity: 0.8; animation: fall linear forwards;
-            box-shadow: 0 0 8px rgba(220, 163, 255, 0.6);
+            position: absolute; top: -20px; background: #e0aaff; border-radius: 15px 0 15px 0;
+            opacity: 0.6; animation: fall linear forwards; box-shadow: 0 0 10px rgba(224, 170, 255, 0.5);
         }
-
         @keyframes fall {
             0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.9; }
+            10% { opacity: 0.8; }
             100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
         }
 
         .content-card {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(15px);
-            padding: 40px; border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 20px 40px rgba(110, 60, 150, 0.15);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 40px; border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             width: 90%; max-width: 400px; z-index: 2; text-align: center;
         }
 
-        h1 { font-size: 24px; font-weight: 800; margin-bottom: 15px; color: #4a0e4e; }
-        p { font-size: 14px; color: #6b5b95; margin-bottom: 30px; line-height: 1.5; font-weight: 600; }
+        h1 { font-size: 28px; margin-bottom: 10px; color: #e0aaff; }
+        .toggle-text { font-size: 14px; margin-top: 20px; cursor: pointer; color: #c77dff; text-decoration: underline; }
 
-        .input-group { margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
         input {
-            width: 100%; padding: 15px; border: 2px solid #d4c4fb;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px; font-family: 'Nunito', sans-serif;
-            font-size: 15px; outline: none; transition: all 0.3s;
-            color: #4a0e4e;
+            width: 100%; padding: 15px; border: none; border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2); color: #fff;
+            font-family: 'Nunito', sans-serif; outline: none; transition: 0.3s;
         }
-        input::placeholder { color: #a99bbd; }
-        
-        input:focus { border-color: #9d4edd; box-shadow: 0 0 10px rgba(157, 78, 221, 0.2); }
+        input::placeholder { color: #e0aaff; opacity: 0.7; }
+        input:focus { background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 15px rgba(157, 78, 221, 0.4); }
 
         .rainbow-btn {
-            position: relative; padding: 3px; border-radius: 20px;
-            background: transparent; border: none; cursor: pointer;
-            overflow: hidden; width: 100%; outline: none; margin-top: 10px;
+            position: relative; padding: 3px; border-radius: 20px; background: transparent;
+            border: none; cursor: pointer; overflow: hidden; width: 100%; margin-top: 10px;
         }
-
         .rainbow-btn span {
-            display: block; padding: 15px 20px; background: #fff;
-            border-radius: 17px; font-family: 'Nunito', sans-serif;
-            font-size: 16px; font-weight: 800; color: #4a0e4e;
-            position: relative; z-index: 2; transition: background 0.3s, color 0.3s;
+            display: block; padding: 15px; background: #7b2cbf; border-radius: 17px;
+            font-weight: 800; color: #fff; position: relative; z-index: 2; transition: 0.3s;
         }
-
         .rainbow-btn::before {
-            content: ''; position: absolute; top: -50%; left: -50%;
-            width: 200%; height: 200%;
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
-            z-index: 1; transition: opacity 0.3s; opacity: 0;
+            z-index: 1; opacity: 0; transition: 0.3s;
         }
-
-        .rainbow-btn:hover::before, .rainbow-btn:active::before {
-            opacity: 1; animation: spin 2s linear infinite;
-        }
-
-        .rainbow-btn:hover span { background: #fdfbfb; color: #000; }
-
+        .rainbow-btn:hover::before { opacity: 1; animation: spin 2s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-
     <div id="flowers-container"></div>
 
     <div class="content-card">
-        <h1>Присоединяйся!</h1>
-        <p>Авторизуйся, чтобы ставить лайки, писать комментарии и стать частью команды.</p>
+        <h1 id="form-title">С возвращением!</h1>
         
-        <form id="registerForm">
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Придумай логин" required>
-            </div>
-            <div class="input-group">
-                <input type="email" id="email" placeholder="Твой Email" required>
-            </div>
-            <div class="input-group">
-                <input type="password" id="password" placeholder="Пароль" required>
-            </div>
-            <button type="submit" class="rainbow-btn">
-                <span>Зарегистрироваться</span>
-            </button>
+        <form id="loginForm">
+            <div class="input-group"><input type="email" id="loginEmail" placeholder="Email" required></div>
+            <div class="input-group"><input type="password" id="loginPass" placeholder="Пароль" required></div>
+            <button type="submit" class="rainbow-btn"><span>Войти</span></button>
+            <p class="toggle-text" onclick="toggleForms()">У меня нет аккаунта (Регистрация)</p>
+        </form>
+
+        <form id="registerForm" class="hidden">
+            <div class="input-group"><input type="text" id="regUser" placeholder="Никнейм" required></div>
+            <div class="input-group"><input type="email" id="regEmail" placeholder="Email" required></div>
+            <div class="input-group"><input type="password" id="regPass" placeholder="Пароль" required></div>
+            <button type="submit" class="rainbow-btn"><span>Создать аккаунт</span></button>
+            <p class="toggle-text" onclick="toggleForms()">Уже есть аккаунт? Войти</p>
         </form>
     </div>
 
     <script>
-        // Анимация лепестков
-        function createFlower() {
+        const API_URL = 'https://mediastudio-creative-mdpz.onrender.com/api';
+
+        // Переключение между формами
+        function toggleForms() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('registerForm').classList.toggle('hidden');
+            const title = document.getElementById('form-title');
+            title.innerText = title.innerText === 'С возвращением!' ? 'Регистрация' : 'С возвращением!';
+        }
+
+        // Лепестки (снегопад)
+        setInterval(() => {
             const container = document.getElementById('flowers-container');
             const flower = document.createElement('div');
             flower.classList.add('flower');
             flower.style.left = Math.random() * 100 + 'vw';
-            flower.style.animationDuration = Math.random() * 4 + 2 + 's';
-            const size = Math.random() * 12 + 8; 
-            flower.style.width = size + 'px';
-            flower.style.height = size + 'px';
+            flower.style.animationDuration = Math.random() * 3 + 2 + 's';
+            const size = Math.random() * 10 + 10;
+            flower.style.width = size + 'px'; flower.style.height = size + 'px';
             container.appendChild(flower);
-            setTimeout(() => { flower.remove(); }, 6000);
-        }
-        setInterval(createFlower, 80);
+            setTimeout(() => flower.remove(), 5000);
+        }, 100);
 
-        // Отправка данных на боевой сервер Render
-        document.getElementById('registerForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            // Твоя боевая ссылка на Render API
-            const serverUrl = 'https://mediastudio-creative-mdpz.onrender.com/api/register';
+        // Логика Входа
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPass').value
+                })
+            });
+            const res = await response.json();
+            if (res.success) {
+                alert(`Привет, ${res.user.username}! Ты успешно вошел.`);
+                localStorage.setItem('user', JSON.stringify(res.user)); // Сохраняем пользователя
+            } else { alert(res.error); }
+        };
 
-            try {
-                const response = await fetch(serverUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Регистрация успешна! Добро пожаловать, ' + username);
-                    // Здесь можно очистить форму после успешной регистрации
-                    document.getElementById('registerForm').reset();
-                } else {
-                    alert('Ошибка регистрации: ' + result.error);
-                }
-            } catch (error) {
-                alert('Ошибка соединения с сервером. Проверь консоль.');
-                console.error(error);
-            }
-        });
+        // Логика Регистрации
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('regUser').value,
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPass').value
+                })
+            });
+            const res = await response.json();
+            if (res.success) { alert('Успех! Теперь войди в аккаунт.'); toggleForms(); }
+            else { alert(res.error); }
+        };
     </script>
 </body>
 </html>
