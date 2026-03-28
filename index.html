@@ -116,33 +116,22 @@
     </div>
 
     <script>
-        // Анимация падающих лепестков
+        // Анимация лепестков
         function createFlower() {
             const container = document.getElementById('flowers-container');
             const flower = document.createElement('div');
             flower.classList.add('flower');
-            
-            // Распределяем по всей ширине экрана
             flower.style.left = Math.random() * 100 + 'vw';
-            
-            // Разная скорость падения для реалистичности (от 2 до 6 секунд)
             flower.style.animationDuration = Math.random() * 4 + 2 + 's';
-            
-            // Немного разный размер лепестков
             const size = Math.random() * 12 + 8; 
             flower.style.width = size + 'px';
             flower.style.height = size + 'px';
-            
             container.appendChild(flower);
-            
-            // Удаляем лепесток, чтобы не завис браузер
             setTimeout(() => { flower.remove(); }, 6000);
         }
-        
-        // ВАЖНО: Уменьшили интервал до 80мс, теперь лепестков будет ОЧЕНЬ много!
         setInterval(createFlower, 80);
 
-        // Отправка данных на сервер Python
+        // Отправка данных на боевой сервер Render
         document.getElementById('registerForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             
@@ -150,8 +139,8 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            // URL твоего локального сервера (потом заменишь на Render)
-            const serverUrl = 'http://127.0.0.1:5000/api/register';
+            // Твоя боевая ссылка на Render API
+            const serverUrl = 'https://mediastudio-creative-mdpz.onrender.com/api/register';
 
             try {
                 const response = await fetch(serverUrl, {
@@ -164,11 +153,13 @@
 
                 if (result.success) {
                     alert('Регистрация успешна! Добро пожаловать, ' + username);
+                    // Здесь можно очистить форму после успешной регистрации
+                    document.getElementById('registerForm').reset();
                 } else {
                     alert('Ошибка регистрации: ' + result.error);
                 }
             } catch (error) {
-                alert('Ошибка соединения. Убедись, что сервер app.py запущен!');
+                alert('Ошибка соединения с сервером. Проверь консоль.');
                 console.error(error);
             }
         });
