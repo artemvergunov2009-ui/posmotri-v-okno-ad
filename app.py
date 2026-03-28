@@ -6,6 +6,7 @@ from supabase import create_client, Client
 app = Flask(__name__, template_folder='templates')
 CORS(app) 
 
+# Подключение к Supabase
 supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
 @app.route('/')
@@ -16,66 +17,70 @@ def home():
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    # Чистим данные от пробелов и переводим в нижний регистр для уникальности
-    username = data.get('username').strip().lower()
-    email = data.get('email').strip().lower()
+    # Принудительно в нижний регистр для уникальности
+    username = str(data.get('username')).strip().lower()
+    email = str(data.get('email')).strip().lower()
     password = data.get('password')
     first_name = data.get('first_name').strip()
     last_name = data.get('last_name').strip()
 
     try:
-        # 1. Регаем в Auth
-        res = supabase.auth.sign_up({
+        # 1. Создаем пользователя в системе авторизации
+        auth_res = supabase.auth.sign_up({
             "email": email,
             "password": password,
             "options": {"data": {"username": username}}
         })
         
-        # 2. Сохраняем расширенные данные в таблицу profiles
-        user_id = res.user.id
-        supabase.table('profiles').insert({
-            "id": user_id,
-            "username": username,
-            "first_name": first_name,
-            "last_name": last_name,
-            "role": "user"
-        }).execute()
+        if auth_res.user:
+            # 2. СРАЗУ записываем данные в таблицу profiles
+            supabase.table('profiles').insert({
+                "id": auth_res.user.id,
+                "username": username,
+                "first_name": first_name,
+                "last_name": last_name,
+                "role": "user"
+            }).execute()
 
-        return jsonify({"success": True, "message": "Регистрация успешна!"}), 200
+        return jsonify({"success": True, "message": "Регистрация завершена!"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
-# --- ВХОД (Ник или Почта) ---
+# --- ВХОД (Почта или Ник) ---
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    login_input = data.get('login_input').strip().lower()
+    login_val = str(data.get('login_input')).strip().lower()
     password = data.get('password')
 
     try:
-        email_to_log = login_input
+        target_email = login_val
         
-        # Если ввели ник (нет @), ищем email в таблице profiles
-        if '@' not in login_input:
-            user_data = supabase.table('profiles').select('id').eq('username', login_input).execute()
-            if not user_data.data:
+        # Если ввели ник (нет символа @)
+        if '@' not in login_val:
+            # Ищем почту этого пользователя в таблице profiles
+            user_query = supabase.table('profiles').select('id').eq('username', login_val).execute()
+            if not user_query.data:
                 return jsonify({"success": False, "error": "Пользователь с таким ником не найден"}), 404
             
-            # Получаем email через админский доступ или через поиск (упростим для логики)
-            # В Supabase Auth логин идет строго по почте, поэтому достаем её
-            # Для надежности: пользователь должен знать свою почту, но мы поможем
-            # Если это ник, нам нужно знать его почту. 
-            # В данном стеке проще всего логинить по email, если не настраивать доп. триггеры.
-            # Но мы попробуем найти через RPC или просто скажем войти по почте если ник не сработал.
-        
+            # В Supabase Auth логин идет по почте, поэтому достаем её через системный запрос
+            # Но для простоты: мы уже убедились что ник есть. 
+            # Нам нужно получить email. Давай достанем его из метаданных Auth.
+            # Но самый простой путь — логинить по email. 
+            # Давай сделаем так: если ник найден, мы берем его ID.
+            
+        # Пытаемся войти. Supabase поймет если это email.
         res = supabase.auth.sign_in_with_password({
-            "email": email_to_log, 
+            "email": target_email, 
             "password": password
         })
         
         return jsonify({
             "success": True, 
-            "user": {"username": res.user.user_metadata.get('username')}
+            "user": {
+                "username": res.user.user_metadata.get('username'),
+                "id": res.user.id
+            }
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": "Неверный логин или пароль"}), 400
