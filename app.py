@@ -3,8 +3,11 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from supabase import create_client, Client
 
-# Явно указываем путь, чтобы Render не путался
-app = Flask(__name__, template_folder='templates')
+# Настройка путей, чтобы Flask точно видел папку templates
+base_dir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(base_dir, 'templates')
+
+app = Flask(__name__, template_folder=template_dir)
 CORS(app) 
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -14,10 +17,13 @@ supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@app.route('/', methods=['GET'])
+# Главная страница - должна отдавать index.html
+@app.route('/')
 def home():
-    # Эта команда ищет файл templates/index.html
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Ошибка: Файл index.html не найден в папке templates. Ошибка: {str(e)}", 404
 
 @app.route('/api/register', methods=['POST'])
 def register():
