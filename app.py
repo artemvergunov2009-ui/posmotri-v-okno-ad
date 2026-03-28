@@ -1,9 +1,10 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from supabase import create_client, Client
 
-app = Flask(__name__)
+# Явно указываем путь, чтобы Render не путался
+app = Flask(__name__, template_folder='templates')
 CORS(app) 
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -15,9 +16,9 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 @app.route('/', methods=['GET'])
 def home():
-    return "Сервер MediaStudio запущен и готов к работе! 🚀", 200
+    # Эта команда ищет файл templates/index.html
+    return render_template('index.html')
 
-# --- РЕГИСТРАЦИЯ ---
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
@@ -31,24 +32,17 @@ def register():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
-# --- ВХОД (НОВОЕ!) ---
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     try:
-        # Пытаемся войти через Supabase
         res = supabase.auth.sign_in_with_password({
             "email": data.get('email'),
             "password": data.get('password')
         })
-        # Возвращаем данные пользователя и токен
         return jsonify({
             "success": True, 
-            "user": {
-                "id": res.user.id,
-                "email": res.user.email,
-                "username": res.user.user_metadata.get('username')
-            }
+            "user": {"id": res.user.id, "email": res.user.email, "username": res.user.user_metadata.get('username')}
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": "Неверный логин или пароль"}), 400
