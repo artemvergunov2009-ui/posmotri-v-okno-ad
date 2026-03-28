@@ -3,233 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaStudio</title>
+    <title>MediaStudio — Канал</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+        :root { --purple: #7b2cbf; --dark: #240046; --light: #e0aaff; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, #240046 0%, #3c096c 50%, #7b2cbf 100%);
-            color: #fff; min-height: 100vh; overflow-x: hidden;
-        }
+        body { font-family: 'Nunito', sans-serif; background: var(--dark); color: #fff; min-height: 100vh; overflow-x: hidden; }
 
-        #toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
-            background: rgba(255,255,255,0.2); backdrop-filter: blur(15px);
-            padding: 15px 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
-            transition: 0.5s; z-index: 1000; font-weight: 700;
+        /* HEADER */
+        header {
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        #toast.show { transform: translateX(-50%) translateY(0); }
+        .profile-btn { cursor: pointer; background: var(--purple); padding: 10px 20px; border-radius: 12px; font-weight: 800; border: none; color: #fff; }
 
-        .container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
-        .hidden { display: none !important; }
+        /* SIDEBAR */
+        nav {
+            position: fixed; left: 0; top: 70px; width: 260px; height: calc(100vh - 70px);
+            background: rgba(255,255,255,0.02); padding: 20px; border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-btn {
+            width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px;
+            background: transparent; border: 1px solid var(--light); color: var(--light);
+            cursor: pointer; text-align: left; font-weight: 600; transition: 0.3s;
+        }
+        .nav-btn:hover { background: var(--purple); color: #fff; border-color: var(--purple); }
 
-        /* Дизайн карточек */
-        .card {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-            padding: 30px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
-            width: 100%; max-width: 500px; margin-bottom: 20px;
-        }
+        /* MAIN AREA */
+        main { margin-left: 260px; margin-top: 70px; padding: 40px; display: flex; justify-content: center; }
+        #feed { width: 100%; max-width: 700px; }
 
-        input, textarea {
-            width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 12px;
-            border: none; background: rgba(255,255,255,0.1); color: #fff; outline: none;
+        /* MODALS */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000;
         }
-
-        .rainbow-btn {
-            position: relative; padding: 3px; border-radius: 15px; background: transparent;
-            border: none; cursor: pointer; overflow: hidden; width: 100%;
+        .modal-content {
+            background: #3c096c; padding: 30px; border-radius: 25px; width: 90%; max-width: 500px;
+            border: 1px solid var(--light); position: relative;
         }
-        .rainbow-btn span {
-            display: block; padding: 12px; background: #5a189a; border-radius: 13px;
-            font-weight: 800; color: #fff; position: relative; z-index: 2;
-        }
-        .rainbow-btn:hover::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: conic-gradient(#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);
-            animation: spin 2s linear infinite; z-index: 1;
-        }
-
-        /* Стили постов */
-        .post { animation: slideUp 0.5s ease forwards; }
-        .post img, .post video { width: 100%; border-radius: 15px; margin: 15px 0; }
-        .post-link { color: #e0aaff; font-weight: 800; text-decoration: none; }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; }
         
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        /* POST DESIGN */
+        .post { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); }
+        .post video { width: 100%; border-radius: 15px; margin: 15px 0; background: #000; }
+        .post h2 { color: var(--light); }
+        .post-tags { color: #9d4edd; font-size: 14px; margin: 5px 0; }
+        
+        input, textarea, select { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--light); border-radius: 10px; color: #fff; margin-bottom: 15px; outline: none; }
+        .red-btn { background: #ff4d4d !important; }
+        .hidden { display: none; }
+
+        /* RAINBOW EFFECT */
+        .rainbow { position: relative; overflow: hidden; }
+        .rainbow:hover::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(red, yellow, green, cyan, blue, magenta, red);
+            animation: rotate 2s linear infinite; z-index: -1;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
 
         #flowers-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        .flower { position: absolute; background: #e0aaff; border-radius: 10px 0; opacity: 0.4; animation: fall linear forwards; }
+        .flower { position: absolute; background: var(--light); border-radius: 10px 0; opacity: 0.3; animation: fall linear forwards; }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="toast">Сообщение</div>
     <div id="flowers-container"></div>
+    <header>
+        <h2 style="color: var(--light)">MediaStudio</h2>
+        <button class="profile-btn" id="accountBtn" onclick="openModal('accountModal')">Личный кабинет</button>
+    </header>
 
-    <div class="container">
-        <div id="auth-box" class="card">
-            <h1 id="auth-title" style="text-align:center; margin-bottom:20px; color:#e0aaff;">Вход</h1>
-            <form id="loginForm">
-                <input type="text" id="lInput" placeholder="Почта или Никнейм" required>
-                <input type="password" id="lPass" placeholder="Пароль" required>
-                <button type="submit" class="rainbow-btn"><span>Войти</span></button>
-                <p style="text-align:center; margin-top:15px; font-size:13px; cursor:pointer;" onclick="toggleAuth()">Нет аккаунта? Регистрация</p>
-            </form>
-
-            <form id="regForm" class="hidden">
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="rFirst" placeholder="Имя" required>
-                    <input type="text" id="rLast" placeholder="Фамилия" required>
-                </div>
-                <input type="text" id="rUser" placeholder="Никнейм" required>
-                <input type="email" id="rEmail" placeholder="Email" required>
-                <input type="password" id="rPass" placeholder="Пароль" required>
-                <button type="submit" class="rainbow-btn"><span>Создать аккаунт</span></button>
-                <p style="text-align:center; margin-top:15px; font-size:13px; cursor:pointer;" onclick="toggleAuth()">Уже есть аккаунт? Войти</p>
-            </form>
+    <nav id="sidebar" class="hidden">
+        <div id="admin-tools" class="hidden">
+            <button class="nav-btn" onclick="openManagerList()">Список руководителей</button>
+            <button class="nav-btn" onclick="openSubList()">Список подписчиков</button>
+            <button class="nav-btn" onclick="openModal('addManagerModal')">Добавить руководителя</button>
         </div>
-
-        <div id="admin-zone" class="hidden" style="width:100%; max-width:500px;">
-            <div id="assistant-tools" class="card hidden" style="border-color: #ff9e00;">
-                <h3 style="color:#ff9e00;">👑 Помощник руководителя</h3>
-                <input type="text" id="targetNick" placeholder="Ник будущего руководителя">
-                <button class="rainbow-btn" onclick="promoteUser()"><span>Назначить руководителя</span></button>
-            </div>
-
-            <div id="manager-tools" class="card hidden">
-                <h3>📝 Новый пост</h3>
-                <input type="text" id="pTitle" placeholder="Заголовок">
-                <textarea id="pContent" placeholder="Текст..."></textarea>
-                <input type="text" id="pMedia" placeholder="Ссылка на фото/видео">
-                <input type="text" id="pLink" placeholder="Ссылка на файл">
-                <button class="rainbow-btn" onclick="sendPost()"><span>Опубликовать</span></button>
-            </div>
+        <div id="post-tools" class="hidden">
+            <button class="nav-btn" onclick="openModal('postModal')">Добавить пост</button>
+            <button class="nav-btn" onclick="openEditList()">Изменить пост</button>
+            <button class="nav-btn" onclick="openDeleteList()">Удалить пост</button>
         </div>
+    </nav>
 
-        <div id="feed" class="hidden" style="width:100%; max-width:600px;">
+    <main>
+        <div id="feed">
+            <h1 id="empty-msg" class="hidden" style="text-align:center; margin-top:50px; opacity:0.5;">Посты на данном канале временно отсутствуют!</h1>
             <div id="posts-list"></div>
+        </div>
+    </main>
+
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('accountModal')">&times;</span>
+            <h2 style="margin-bottom:20px;">Ваш профиль</h2>
+            <div id="userData" style="line-height: 2;"></div>
+            <hr style="margin:20px 0; opacity:0.2;">
+            <button class="nav-btn" onclick="closeModal('accountModal')">Вернуться на главную</button>
+            <button class="nav-btn red-btn" onclick="logout()">Выйти из аккаунта</button>
+        </div>
+    </div>
+
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('postModal')">&times;</span>
+            <h2>Новая публикация</h2>
+            <input type="text" id="pTitle" placeholder="Заголовок">
+            <textarea id="pText" placeholder="Сообщение..." rows="4"></textarea>
+            <input type="text" id="pTags" placeholder="#хештеги">
+            <input type="text" id="pLink" placeholder="Ссылка (URL)">
+            <p style="font-size:12px; margin-bottom:5px;">🖇 Прикрепить видео/фото (URL):</p>
+            <input type="text" id="pMedia" placeholder="Прямая ссылка на файл">
+            <button class="profile-btn" style="width:100%" onclick="savePost()">Отправить</button>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2>Точно ли удалить этот пост?</h2>
+            <div style="display:flex; gap:10px; margin-top:25px;">
+                <button class="profile-btn red-btn" style="flex:1" id="finalDelBtn">Удалить</button>
+                <button class="profile-btn" style="flex:1" onclick="closeModal('confirmModal')">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginOverlay" class="modal" style="display:flex; background: var(--dark);">
+        <div class="modal-content" style="text-align:center;">
+            <h1 style="margin-bottom:20px; color:var(--light)">Вход в MediaStudio</h1>
+            <div id="loginView">
+                <input type="text" id="lEmail" placeholder="Email или Никнейм">
+                <input type="password" id="lPass" placeholder="Пароль">
+                <button class="profile-btn" style="width:100%" onclick="login()">Войти</button>
+                <p style="margin-top:15px; cursor:pointer; font-size:13px;" onclick="toggleAuth(true)">Нет аккаунта? Регистрация</p>
+            </div>
+            <div id="regView" class="hidden">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="rFirst" placeholder="Имя">
+                    <input type="text" id="rLast" placeholder="Фамилия">
+                </div>
+                <input type="text" id="rUser" placeholder="Никнейм">
+                <input type="email" id="rEmail" placeholder="Email">
+                <input type="password" id="rPass" placeholder="Пароль">
+                <button class="profile-btn" style="width:100%" onclick="register()">Создать аккаунт</button>
+                <p style="margin-top:15px; cursor:pointer; font-size:13px;" onclick="toggleAuth(false)">Уже есть аккаунт? Войти</p>
+            </div>
         </div>
     </div>
 
     <script>
         const API = '/api';
         let user = null;
+        let allPosts = [];
 
-        function showMsg(t, color="#fff") {
-            const el = document.getElementById('toast');
-            el.innerText = t; el.style.color = color;
-            el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000);
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function toggleAuth(reg) {
+            document.getElementById('loginView').className = reg ? 'hidden' : '';
+            document.getElementById('regView').className = reg ? '' : 'hidden';
         }
 
-        function toggleAuth() {
-            document.getElementById('loginForm').classList.toggle('hidden');
-            document.getElementById('regForm').classList.toggle('hidden');
-            document.getElementById('auth-title').innerText = document.getElementById('regForm').classList.contains('hidden') ? 'Вход' : 'Регистрация';
-        }
-
-        // ВХОД
-        document.getElementById('loginForm').onsubmit = async (e) => {
-            e.preventDefault();
+        async function login() {
             const res = await fetch(`${API}/login`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    login_input: document.getElementById('lInput').value,
-                    password: document.getElementById('lPass').value
-                })
+                body: JSON.stringify({ login_input: document.getElementById('lEmail').value, password: document.getElementById('lPass').value })
             });
             const data = await res.json();
-            if(data.success) {
-                user = data.user;
-                showMsg(`Привет, ${user.username}!`);
-                startApp();
-            } else { showMsg(data.error, "#ff4b4b"); }
-        };
+            if(data.success) { user = data.user; initApp(); } else { alert("Ошибка входа"); }
+        }
 
-        // РЕГИСТРАЦИЯ
-        document.getElementById('regForm').onsubmit = async (e) => {
-            e.preventDefault();
+        async function register() {
             const res = await fetch(`${API}/register`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    first_name: document.getElementById('rFirst').value,
-                    last_name: document.getElementById('rLast').value,
-                    username: document.getElementById('rUser').value,
-                    email: document.getElementById('rEmail').value,
-                    password: document.getElementById('rPass').value
+                    first_name: document.getElementById('rFirst').value, last_name: document.getElementById('rLast').value,
+                    username: document.getElementById('rUser').value, email: document.getElementById('rEmail').value, password: document.getElementById('rPass').value
                 })
             });
             const data = await res.json();
-            if(data.success) { showMsg("Успех! Теперь войдите."); toggleAuth(); }
-            else { showMsg(data.error, "#ff4b4b"); }
-        };
+            if(data.success) { alert("Успех! Теперь войдите."); toggleAuth(false); } else { alert(data.error); }
+        }
 
-        function startApp() {
-            document.getElementById('auth-box').classList.add('hidden');
-            document.getElementById('feed').classList.remove('hidden');
-            document.getElementById('admin-zone').classList.remove('hidden');
+        function initApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('sidebar').classList.remove('hidden');
             
+            // Личный кабинет данные
+            document.getElementById('userData').innerHTML = `
+                <p><b>Имя:</b> ${user.first_name}</p>
+                <p><b>Фамилия:</b> ${user.last_name}</p>
+                <p><b>Никнейм:</b> @${user.username}</p>
+                <p><b>Роль:</b> ${user.role === 'assistant_manager' ? 'Помощник руководителя' : (user.role === 'manager' ? 'Руководитель' : 'Подписчик')}</p>
+            `;
+
             if(user.role === 'assistant_manager') {
-                document.getElementById('assistant-tools').classList.remove('hidden');
-                document.getElementById('manager-tools').classList.remove('hidden');
+                document.getElementById('admin-tools').classList.remove('hidden');
+                document.getElementById('post-tools').classList.remove('hidden');
             } else if(user.role === 'manager') {
-                document.getElementById('manager-tools').classList.remove('hidden');
+                document.getElementById('post-tools').classList.remove('hidden');
             }
             loadPosts();
         }
 
         async function loadPosts() {
             const res = await fetch(`${API}/posts`);
-            const posts = await res.json();
+            allPosts = await res.json();
             const list = document.getElementById('posts-list');
+            const empty = document.getElementById('empty-msg');
+            
             list.innerHTML = '';
-            posts.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'card post';
-                div.innerHTML = `
-                    <h3>${p.title}</h3>
-                    <p style="margin:10px 0;">${p.content}</p>
-                    ${p.media_url ? (p.media_url.includes('mp4') ? `<video src="${p.media_url}" controls></video>` : `<img src="${p.media_url}">`) : ''}
-                    ${p.link_url ? `<a href="${p.link_url}" class="post-link" target="_blank">🔗 Открыть ссылку</a>` : ''}
-                    <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:12px; opacity:0.6;">
-                        <span>Автор: ${p.author_name}</span>
-                        <span onclick="like(${p.id})" style="cursor:pointer; color:#ff4b4b; font-weight:800;">❤️ Лайк</span>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
+            if(allPosts.length === 0) { empty.classList.remove('hidden'); } 
+            else {
+                empty.classList.add('hidden');
+                allPosts.forEach(post => {
+                    const div = document.createElement('div');
+                    div.className = 'post';
+                    div.innerHTML = `
+                        <h2>${post.title}</h2>
+                        <div class="post-tags">${post.hashtags || ''}</div>
+                        <p>${post.content}</p>
+                        ${post.media_url ? renderMedia(post.media_url) : ''}
+                        ${post.link_url ? `<a href="${post.link_url}" target="_blank" class="post-tags" style="text-decoration:underline">🔗 Ссылка в посте</a>` : ''}
+                        <div style="margin-top:20px; font-size:12px; opacity:0.5;">Лайков: 0 | Комментариев: 0</div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
         }
 
-        async function sendPost() {
-            await fetch(`${API}/posts`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    author_id: user.id,
-                    author_name: user.username,
-                    title: document.getElementById('pTitle').value,
-                    content: document.getElementById('pContent').value,
-                    media_url: document.getElementById('pMedia').value,
-                    link_url: document.getElementById('pLink').value
-                })
-            });
-            showMsg("Опубликовано!"); loadPosts();
+        function renderMedia(url) {
+            if(url.match(/\.(mp4|webm|ogg)$/)) return `<video src="${url}" controls></video>`;
+            return `<img src="${url}" style="width:100%; border-radius:15px; margin:15px 0;">`;
         }
 
-        async function promoteUser() {
-            const target = document.getElementById('targetNick').value;
-            const res = await fetch(`${API}/promote`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ target })
-            });
-            const data = await res.json();
-            showMsg(data.message);
+        async function savePost() {
+            const data = {
+                author_id: user.id, author_name: user.username,
+                title: document.getElementById('pTitle').value,
+                content: document.getElementById('pText').value,
+                hashtags: document.getElementById('pTags').value,
+                media_url: document.getElementById('pMedia').value,
+                link_url: document.getElementById('pLink').value
+            };
+            await fetch(`${API}/posts`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            closeModal('postModal'); loadPosts();
         }
 
-        // Снегопад лепестков
+        function openDeleteList() {
+            let id = prompt("Введите заголовок поста для удаления:\n" + allPosts.map(p => p.title).join("\n"));
+            let post = allPosts.find(p => p.title === id);
+            if(post) {
+                openModal('confirmModal');
+                document.getElementById('finalDelBtn').onclick = async () => {
+                    await fetch(`${API}/posts/${post.id}`, { method: 'DELETE' });
+                    closeModal('confirmModal'); loadPosts();
+                };
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        // Эффект лепестков
         setInterval(() => {
             const c = document.getElementById('flowers-container');
             const f = document.createElement('div');
@@ -238,7 +279,7 @@
             f.style.width = f.style.height = (Math.random() * 10 + 7) + 'px';
             f.style.animationDuration = (Math.random() * 3 + 2) + 's';
             c.appendChild(f); setTimeout(() => f.remove(), 4000);
-        }, 100);
+        }, 150);
     </script>
 </body>
 </html>
